@@ -1,5 +1,12 @@
 # `oop_rails_server` Releases
 
+## 0.0.2x, 3 May 2019
+
+* Rails 5.x support
+* Support for Rails lesser than 4 droppped
+* Travis integration
+
+
 ## 0.0.24, 19 October 2016
 
 * Bump up server verification timeout; JRuby can be incredibly slow running Rails in development mode.

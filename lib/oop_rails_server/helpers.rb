@@ -1,6 +1,8 @@
 require 'active_support'
 require 'json'
 require 'oop_rails_server/rails_server'
+require 'active_support/core_ext/hash/keys'
+require 'active_support/core_ext/string/inflections'
 
 module OopRailsServer
   module Helpers

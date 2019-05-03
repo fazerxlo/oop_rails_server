@@ -4,6 +4,8 @@ require 'net/http'
 require 'uri'
 require 'file/tail'
 require 'oop_rails_server/gemfile'
+require 'bundler'
+require 'socket'
 
 module OopRailsServer
   class RailsServer
@@ -94,7 +96,7 @@ module OopRailsServer
     end
 
     def localhost_name
-      "127.0.0.1"
+      Socket.gethostname || "127.0.0.1"
     end
 
     def send_http_request(path_or_uri, options = { })
@@ -396,6 +398,7 @@ The last #{last_lines.length} lines of this log are:
       result = data.body.strip
 
       unless result =~ /^Rails\s+version\s*:\s*(\d+\.\d+\.\d+(\.\d+)?)\s*\n+\s*Ruby\s+version\s*:\s*(\d+\..*?)\s*\n+\s*Ruby\s+engine:\s*(.*?)\s*\n?$/mi
+        sleep 3000
         raise_startup_failed_error!(Time.now - start_time, "'#{server_verify_url}' returned: #{result.inspect}")
       end
       actual_version = $1
