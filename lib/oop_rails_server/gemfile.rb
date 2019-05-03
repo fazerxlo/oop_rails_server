@@ -17,12 +17,12 @@ module OopRailsServer
     def set_specs!(gem_name, new_specs)
       new_specs_line = new_specs.inspect
       if new_specs_line =~ /^\s*\{\s*(.*?)\s*\}\s*$/
-        new_specs_line = $1
+        new_specs_line = Regexp.last_match(1)
       else
         raise "Object doesn't seem to #inspect into a Hash string: #{new_specs.inspect}"
       end
 
-      update_gemfile_line!(gem_name) do |gemdecl, specs|
+      update_gemfile_line!(gem_name) do |gemdecl, _specs|
         "#{gemdecl}, #{new_specs_line}"
       end
     end
@@ -34,37 +34,37 @@ module OopRailsServer
     end
 
     def write!
-      File.open(file_path, "w") do |f|
+      File.open(file_path, 'w') do |f|
         contents.each { |l| f.puts l }
       end
     end
 
     private
+
     attr_reader :file_path
 
-    GEM_LINE_REGEXP = /^(\s*gem\s+['"])([^"']+)(['"])(.*)$/
+    GEM_LINE_REGEXP = /^(\s*gem\s+['"])([^"']+)(['"])(.*)$/.freeze
 
     def update_gemfile_line!(gem_name)
       found = nil
 
       contents.each_with_index do |line, index|
-        if line =~ GEM_LINE_REGEXP && $2.strip.downcase == gem_name.strip.downcase
-          if found
-            raise "Multiple lines in '#{file_path}' seem to specify gem '#{gem_name}':\n     #{found[0]}: #{found[1]}\nand  #{index}: #{line}"
-          end
-
-          found = [ index, line ]
+        next unless line =~ GEM_LINE_REGEXP && Regexp.last_match(2).strip.downcase == gem_name.strip.downcase
+        if found
+          raise "Multiple lines in '#{file_path}' seem to specify gem '#{gem_name}':\n     #{found[0]}: #{found[1]}\nand  #{index}: #{line}"
         end
+
+        found = [index, line]
       end
 
       unless found
         new_line = "gem '#{gem_name}'"
         contents << new_line
-        found = [ (contents.length - 1), new_line ]
+        found = [(contents.length - 1), new_line]
       end
 
       matchdata = GEM_LINE_REGEXP.match(found[1])
-      gemdecl = [ matchdata[1], matchdata[2], matchdata[3] ].join
+      gemdecl = [matchdata[1], matchdata[2], matchdata[3]].join
 
       modified_line = yield gemdecl, matchdata[4]
       contents[found[0]] = modified_line
@@ -73,10 +73,10 @@ module OopRailsServer
     def contents
       @contents ||= begin
         c = if File.exist?(file_path)
-          File.read(file_path)
-        else
-          empty_gemfile_contents
-        end
+              File.read(file_path)
+            else
+              empty_gemfile_contents
+            end
 
         c.split(/\n/)
       end

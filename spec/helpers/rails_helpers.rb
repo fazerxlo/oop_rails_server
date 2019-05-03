@@ -10,15 +10,15 @@ module Spec
       end
 
       def rails_server_wraps_template_errors?
-        !! (rails_server.actual_rails_version =~ /^5\./)
+        !!(rails_server.actual_rails_version =~ /^5\./)
       end
 
       def expect_actionview_exception(subpath, class_name, message)
         actual_class_expected = if rails_server_wraps_template_errors?
-          'ActionView::Template::Error'
-        else
-          class_name
-        end
+                                  'ActionView::Template::Error'
+                                else
+                                  class_name
+                                end
 
         hash = expect_exception(subpath, actual_class_expected, message)
 

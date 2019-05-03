@@ -10,20 +10,19 @@ module OopRailsServer
 
     attr_reader :rails_server
 
-
     def full_path(subpath)
       "#{rails_template_name}/#{subpath}"
     end
 
-    def get(subpath, options = { })
+    def get(subpath, options = {})
       rails_server.get(full_path(subpath), options)
     end
 
-    def get_response(subpath, options = { })
+    def get_response(subpath, options = {})
       rails_server.get_response(full_path(subpath), options)
     end
 
-    def get_success(subpath, options = { })
+    def get_success(subpath, options = {})
       data = get(subpath, options)
       expect(data).to match(/oop_rails_server_base_template/i) unless options[:no_layout]
       data
@@ -46,15 +45,15 @@ module OopRailsServer
 
       json = begin
         JSON.parse(data)
-      rescue => e
-        raise %{Expected a JSON response from '#{subpath}' (because we expected an exception),
-  but we couldn't parse it as JSON; when we tried, we got:
+             rescue StandardError => e
+               raise %{Expected a JSON response from '#{subpath}' (because we expected an exception),
+         but we couldn't parse it as JSON; when we tried, we got:
 
-  (#{e.class.name}) #{e.message}
+         (#{e.class.name}) #{e.message}
 
-  The data is:
+         The data is:
 
-  #{data.inspect}}
+         #{data.inspect}}
       end
 
       expect(json['exception']).to be
@@ -74,15 +73,15 @@ it should return the fully-qualified path to the root of your project (gem, appl
     end
 
     def rails_server_templates_root
-      @rails_server_templates_root ||= File.join(rails_server_project_root, "spec/rails/templates")
+      @rails_server_templates_root ||= File.join(rails_server_project_root, 'spec/rails/templates')
     end
 
     def rails_server_runtime_base_directory
-      @rails_server_runtime_base_directory ||= File.join(rails_server_project_root, "tmp/spec/rails")
+      @rails_server_runtime_base_directory ||= File.join(rails_server_project_root, 'tmp/spec/rails')
     end
 
     def rails_server_gemfile_modifier
-      Proc.new { |gemfile| }
+      proc { |gemfile| }
     end
 
     def rails_server_default_version
@@ -90,7 +89,7 @@ it should return the fully-qualified path to the root of your project (gem, appl
     end
 
     def rails_servers
-      @rails_servers ||= { }
+      @rails_servers ||= {}
     end
 
     def mail_sent_to(destination_address, the_rails_server = nil)
@@ -100,32 +99,32 @@ it should return the fully-qualified path to the root of your project (gem, appl
 
       if File.exist?(mail_file)
         contents = File.read(mail_file).split(/\n/)
-        headers = { }
+        headers = {}
         last_header = nil
-        body = ""
+        body = ''
         have_started_body = false
 
         contents.each do |line|
           if have_started_body
             body << "#{line.chomp}\n"
-          elsif line.strip.length == 0
+          elsif line.strip.empty?
             have_started_body = true
           elsif line =~ /^(\S+):\s+(.*?)\s*$/i
-            last_header = $1
-            headers[last_header] = $2
+            last_header = Regexp.last_match(1)
+            headers[last_header] = Regexp.last_match(2)
           elsif line =~ /^\s+(.*?)\s*$/i && last_header
-            headers[last_header] << " #{$1}"
+            headers[last_header] << " #{Regexp.last_match(1)}"
           else
             raise "Unexpected line in #{mail_file.inspect}:\n#{line}"
           end
         end
 
-        { :headers => headers, :body => body }
+        { headers: headers, body: body }
       else
         if File.exist?(mail_directory_for_rails_server(the_rails_server))
-          $stderr.puts "WARNING: No mails for #{destination_address.inspect}: #{Dir.entries(mail_directory_for_rails_server(the_rails_server))}"
+          warn "WARNING: No mails for #{destination_address.inspect}: #{Dir.entries(mail_directory_for_rails_server(the_rails_server))}"
         else
-          $stderr.puts "WARNING: No mails: no dir: #{mail_directory_for_rails_server(the_rails_server)}"
+          warn "WARNING: No mails: no dir: #{mail_directory_for_rails_server(the_rails_server)}"
         end
       end
     end
@@ -149,15 +148,15 @@ it should return the fully-qualified path to the root of your project (gem, appl
     def rails_server
       if rails_servers.size == 1
         rails_servers[rails_servers.keys.first]
-      elsif rails_servers.size == 0
-        raise "No Rails servers have been started!"
+      elsif rails_servers.empty?
+        raise 'No Rails servers have been started!'
       else
-        raise "Multiple Rails servers have been started; you must specify which one you want: #{rails_servers.keys.join(", ")}"
+        raise "Multiple Rails servers have been started; you must specify which one you want: #{rails_servers.keys.join(', ')}"
       end
     end
 
     def rails_server_implicit_template_paths
-      [ ]
+      []
     end
 
     def rails_server_template_paths(template_names)
@@ -171,14 +170,14 @@ it should return the fully-qualified path to the root of your project (gem, appl
       end
     end
 
-    def start_rails_server!(options = { })
-      templates = Array(options[:templates] || options[:name] || [ ])
-      raise "You must specify a template" unless templates.length >= 1
+    def start_rails_server!(options = {})
+      templates = Array(options[:templates] || options[:name] || [])
+      raise 'You must specify a template' unless templates.length >= 1
 
       name = options[:name]
       name ||= templates[0] if templates.length == 1
       name = name.to_s.strip
-      raise "You must specify a name" unless name && name.to_s.strip.length > 0
+      raise 'You must specify a name' unless name && !name.to_s.strip.empty?
 
       server = rails_servers[name]
       server ||= begin
@@ -189,18 +188,19 @@ it should return the fully-qualified path to the root of your project (gem, appl
         template_paths = rails_server_template_paths(templates)
 
         rsgm = rails_server_gemfile_modifier
-        agm = options[:additional_gemfile_modifier] || (Proc.new { |gemfile| })
+        agm = options[:additional_gemfile_modifier] || (proc { |gemfile| })
 
-        gemfile_modifier = Proc.new do |gemfile|
+        gemfile_modifier = proc do |gemfile|
           rsgm.call(gemfile)
           agm.call(gemfile)
         end
 
         server = ::OopRailsServer::RailsServer.new(
-          :name => name, :template_paths => template_paths,
-          :runtime_base_directory => rails_server_runtime_base_directory,
-          :rails_version => (options[:rails_version] || rails_server_default_version),
-          :rails_env => options[:rails_env], :gemfile_modifier => gemfile_modifier)
+          name: name, template_paths: template_paths,
+          runtime_base_directory: rails_server_runtime_base_directory,
+          rails_version: (options[:rails_version] || rails_server_default_version),
+          rails_env: options[:rails_env], gemfile_modifier: gemfile_modifier
+        )
 
         rails_servers[name] = server
 
@@ -211,22 +211,22 @@ it should return the fully-qualified path to the root of your project (gem, appl
     end
 
     def stop_rails_servers!
-      exceptions = [ ]
+      exceptions = []
       rails_servers.each do |name, server|
         begin
           server.stop!
-        rescue => e
-          exceptions << [ name, e ]
+        rescue StandardError => e
+          exceptions << [name, e]
         end
       end
 
-      raise "Unable to stop all Rails servers! Got:\n#{exceptions.join("\n")}" if exceptions.length > 0
+      raise "Unable to stop all Rails servers! Got:\n#{exceptions.join("\n")}" unless exceptions.empty?
     end
 
     module ClassMethods
-      def uses_rails_with_template(template_name, options = { })
+      def uses_rails_with_template(template_name, options = {})
         before :all do
-          start_rails_server!({ :templates => [ template_name ] }.merge(options))
+          start_rails_server!({ templates: [template_name] }.merge(options))
         end
 
         after :all do

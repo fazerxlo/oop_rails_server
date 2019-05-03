@@ -1,3 +1,3 @@
 module OopRailsServer
-  VERSION = "0.0.24"
+  VERSION = '0.0.24'.freeze
 end

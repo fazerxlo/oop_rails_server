@@ -18,13 +18,13 @@ module OopRailsServer
         :log, :verbose
       )
 
-      @name = options[:name] || raise(ArgumentError, "You must specify a name for the Rails server")
+      @name = options[:name] || raise(ArgumentError, 'You must specify a name for the Rails server')
 
-      @template_paths = options[:template_paths] || raise(ArgumentError, "You must specify one or more template paths")
+      @template_paths = options[:template_paths] || raise(ArgumentError, 'You must specify one or more template paths')
       @template_paths = Array(@template_paths).map { |t| File.expand_path(t) }
       @template_paths = base_template_directories + @template_paths
 
-      @runtime_base_directory = options[:runtime_base_directory] || raise(ArgumentError, "You must specify a runtime_base_directory")
+      @runtime_base_directory = options[:runtime_base_directory] || raise(ArgumentError, 'You must specify a runtime_base_directory')
       @runtime_base_directory = File.expand_path(@runtime_base_directory)
 
       @rails_version = options[:rails_version] || :default
@@ -33,11 +33,10 @@ module OopRailsServer
       @log = options[:log] || $stderr
       @verbose = options.fetch(:verbose, true)
 
-      @gemfile_modifier = options[:gemfile_modifier] || (Proc.new { |gemfile| })
-
+      @gemfile_modifier = options[:gemfile_modifier] || (proc { |gemfile| })
 
       @rails_root = File.expand_path(File.join(@runtime_base_directory, rails_version.to_s, name.to_s))
-      @port = 20_000 + rand(10_000)
+      @port = rand(20_000..29_999)
       @server_pid = nil
     end
 
@@ -72,34 +71,34 @@ module OopRailsServer
       stop_server! if server_pid
     end
 
-    def post(path_or_uri, options = { })
-      send_http_request(path_or_uri, options.merge(:http_method => :post))
+    def post(path_or_uri, options = {})
+      send_http_request(path_or_uri, options.merge(http_method: :post))
     end
 
-    def get(path_or_uri, options = { })
+    def get(path_or_uri, options = {})
       out = get_response(path_or_uri, options)
       out.body.strip if out
     end
 
     def uri_for(path_or_uri, query_values = nil)
-      query_values ||= { }
+      query_values ||= {}
 
-      if path_or_uri.kind_of?(::URI)
+      if path_or_uri.is_a?(::URI)
         path_or_uri
       else
         uri_string = "http://#{localhost_name}:#{@port}/#{path_or_uri}"
-        if query_values.length > 0
-          uri_string += ("?" + query_values.map { |k,v| "#{CGI.escape(k.to_s)}=#{CGI.escape(v.to_s)}" }.join("&"))
+        unless query_values.empty?
+          uri_string += ('?' + query_values.map { |k, v| "#{CGI.escape(k.to_s)}=#{CGI.escape(v.to_s)}" }.join('&'))
         end
         URI.parse(uri_string)
       end
     end
 
     def localhost_name
-      Socket.gethostname || "127.0.0.1"
+      Socket.gethostname || '127.0.0.1'
     end
 
-    def send_http_request(path_or_uri, options = { })
+    def send_http_request(path_or_uri, options = {})
       options.assert_valid_keys(:ignore_status_code, :nil_on_not_found, :query, :no_layout, :accept_header, :http_method, :post_variables)
 
       uri = uri_for(path_or_uri, options[:query])
@@ -120,7 +119,7 @@ module OopRailsServer
         data = http.request(request)
       end
 
-      if (data.code.to_s != '200')
+      if data.code.to_s != '200'
         if options[:ignore_status_code]
           # ok, nothing
         elsif options[:nil_on_not_found]
@@ -132,8 +131,8 @@ module OopRailsServer
       data
     end
 
-    def get_response(path_or_uri, options = { })
-      send_http_request(path_or_uri, options.merge(:http_method => :get))
+    def get_response(path_or_uri, options = {})
+      send_http_request(path_or_uri, options.merge(http_method: :get))
     end
 
     def run_command_in_rails_root!(command)
@@ -147,6 +146,7 @@ module OopRailsServer
     end
 
     private
+
     attr_reader :template_paths, :runtime_base_directory, :rails_env, :gemfile_modifier, :port, :server_pid
 
     def base_template_directories
@@ -182,9 +182,9 @@ module OopRailsServer
       last_lines = server_logfile = nil
       if File.exist?(server_output_file) && File.readable?(server_output_file)
         server_logfile = server_output_file
-        File::Tail::Logfile.open(server_output_file, :break_if_eof => true) do |f|
+        File::Tail::Logfile.open(server_output_file, break_if_eof: true) do |f|
           f.extend(File::Tail)
-          last_lines ||= [ ]
+          last_lines ||= []
           begin
             f.tail(100) { |l| last_lines << l }
           rescue File::Tail::BreakException
@@ -217,10 +217,10 @@ module OopRailsServer
     end
 
     def splat_bootstrap_gemfile!
-      rails_version_specs = if rails_version == :default then [ ] else [ "= #{rails_version}" ] end
+      rails_version_specs = rails_version == :default ? [] : ["= #{rails_version}"]
 
-      gemfile = ::OopRailsServer::Gemfile.new("Gemfile")
-      gemfile.add_version_constraints!("rails", *rails_version_specs)
+      gemfile = ::OopRailsServer::Gemfile.new('Gemfile')
+      gemfile.add_version_constraints!('rails', *rails_version_specs)
 
       backcompat_bootstrap_gems!(gemfile)
 
@@ -231,7 +231,7 @@ module OopRailsServer
     def rails_new!
       # This is a little trick to specify the exact version of Rails you want to create it with...
       # http://stackoverflow.com/questions/379141/specifying-rails-version-to-use-when-creating-a-new-application
-      rails_version_spec = rails_version == :default ? "" : "_#{rails_version}_"
+      rails_version_spec = rails_version == :default ? '' : "_#{rails_version}_"
       cmd = "bundle exec rails #{rails_version_spec} new #{File.basename(rails_root)} -d sqlite3 -f -B"
       safe_system(cmd, "creating a new Rails installation for '#{name}'")
     end
@@ -250,7 +250,7 @@ module OopRailsServer
     end
 
     def with_env(new_env)
-      old_env = { }
+      old_env = {}
       new_env.keys.each { |k| old_env[k] = ENV[k] }
 
       begin
@@ -262,7 +262,7 @@ module OopRailsServer
     end
 
     def set_env(new_env)
-      new_env.each do |k,v|
+      new_env.each do |k, v|
         if v
           ENV[k] = v
         else
@@ -298,7 +298,7 @@ module OopRailsServer
     def start_server!
       output = server_output_file
       cmd = "bundle exec rails server -p #{port} > '#{output}' 2>&1"
-      safe_system(cmd, "starting 'rails server' on port #{port}", :background => true)
+      safe_system(cmd, "starting 'rails server' on port #{port}", background: true)
 
       server_pid_file = File.join(rails_root, 'tmp', 'pids', 'server.pid')
 
@@ -321,18 +321,16 @@ module OopRailsServer
     end
 
     def verify_server_and_shut_down_if_fails!
+      verify_server!
+    rescue Exception => e
+      say "Verification of Rails server failed:\n  #{e.message} (#{e.class.name})\n    #{e.backtrace.join("\n    ")}"
       begin
-        verify_server!
+        stop_server!
       rescue Exception => e
-        say "Verification of Rails server failed:\n  #{e.message} (#{e.class.name})\n    #{e.backtrace.join("\n    ")}"
-        begin
-          stop_server!
-        rescue Exception => e
-          say "WARNING: Verification of server failed, so we tried to stop it, but we couldn't do that. Proceeding, but you may have a Rails server left around anyway. The exception from trying to stop the server was:\n  #{e.message} (#{e.class.name})\n    #{e.backtrace.join("\n    ")}"
-        end
-
-        raise
+        say "WARNING: Verification of server failed, so we tried to stop it, but we couldn't do that. Proceeding, but you may have a Rails server left around anyway. The exception from trying to stop the server was:\n  #{e.message} (#{e.class.name})\n    #{e.backtrace.join("\n    ")}"
       end
+
+      raise
     end
 
     class FailedStartupError < StandardError
@@ -346,18 +344,18 @@ dead in its tracks. (oop_rails_server starts up Rails servers in the production 
 by default, and, in production, Rails eagerly loads all classes at startup time.)}
 
         if server_logfile
-          message << %{
+          message << %(
 
 Any errors will be located in the stdout/stderr of the Rails process, which is at:
-  '#{server_logfile}'}
+  '#{server_logfile}')
         end
 
         if last_lines
-          message << %{
+          message << %(
 
 The last #{last_lines.length} lines of this log are:
 
-#{last_lines.join("\n")}}
+#{last_lines.join("\n")})
         end
 
         super(message)
@@ -401,9 +399,9 @@ The last #{last_lines.length} lines of this log are:
         sleep 3000
         raise_startup_failed_error!(Time.now - start_time, "'#{server_verify_url}' returned: #{result.inspect}")
       end
-      actual_version = $1
-      ruby_version = $3
-      ruby_engine = $4
+      actual_version = Regexp.last_match(1)
+      ruby_version = Regexp.last_match(3)
+      ruby_engine = Regexp.last_match(4)
 
       if rails_version != :default && (actual_version != rails_version)
         raise "We seem to have spawned the wrong version of Rails; wanted: #{rails_version.inspect} but got: #{actual_version.inspect}"
@@ -422,6 +420,7 @@ The last #{last_lines.length} lines of this log are:
       results.split(/[\r\n]+/).each do |line|
         line = line.strip.downcase
         next if line == 'pid'
+
         if line =~ /^\d+$/i
           return true if Integer(line) == pid
         else
@@ -435,13 +434,14 @@ The last #{last_lines.length} lines of this log are:
     def stop_server!
       # We do this because under 1.8.7 SIGTERM doesn't seem to work, and it's actually fine to slaughter this
       # process mercilessly -- we don't need anything it has at this point, anyway.
-      Process.kill("KILL", server_pid)
+      Process.kill('KILL', server_pid)
 
       start_time = Time.now
 
-      while true
+      loop do
         if is_alive?(server_pid)
           raise "Unable to kill server at PID #{server_pid}!" if (Time.now - start_time) > 20
+
           say "Waiting for server at PID #{server_pid} to die."
           sleep 0.1
         else
@@ -463,33 +463,34 @@ The last #{last_lines.length} lines of this log are:
         @result = result
         @output = output
 
-        super(%{Command failed: in directory '#{directory}', we tried to run:
+        super(%(Command failed: in directory '#{directory}', we tried to run:
 % #{command}
 but got result: #{result.inspect}
 and output:
-#{output}})
+#{output}))
       end
     end
 
     def attempt_bundle_install_cmd!(name, use_local)
-      cmd = "bundle install"
-      cmd << " --local" if use_local
+      cmd = 'bundle install'
+      cmd << ' --local' if use_local
 
       description = "running 'bundle install' for #{name.inspect}"
-      description << " (with remote fetching allowed)" if (! use_local)
+      description << ' (with remote fetching allowed)' unless use_local
 
       attempts = 0
-      while true
+      loop do
         begin
           safe_system(cmd, description)
           break
-        rescue CommandFailedError => cfe
+        rescue CommandFailedError => e
           # Sigh. Travis CI sometimes fails this with the following exception:
           #
           # Gem::RemoteFetcher::FetchError: Errno::ETIMEDOUT: Connection timed out - connect(2)
           #
           # So, we catch the command failure, look to see if this is the problem, and, if so, retry
-          raise if (! is_travis_remote_fetcher_error?(cfe)) || attempts >= 5
+          raise if !is_travis_remote_fetcher_error?(e) || attempts >= 5
+
           attempts += 1
         end
       end
@@ -505,20 +506,18 @@ and output:
     end
 
     def do_bundle_install!(name, allow_remote)
-      begin
-        attempt_bundle_install_cmd!(name, true)
-      rescue CommandFailedError => cfe
-        if is_remote_flag_required_error?(cfe) && allow_remote
-          attempt_bundle_install_cmd!(name, false)
-        else
-          raise
-        end
+      attempt_bundle_install_cmd!(name, true)
+    rescue CommandFailedError => e
+      if is_remote_flag_required_error?(e) && allow_remote
+        attempt_bundle_install_cmd!(name, false)
+      else
+        raise
       end
     end
 
     def run_bundle_install!(name)
-      @bundle_installs_run ||= { }
-      do_bundle_install!(name, ! @bundle_installs_run[name])
+      @bundle_installs_run ||= {}
+      do_bundle_install!(name, !@bundle_installs_run[name])
       @bundle_installs_run[name] ||= true
     end
 
@@ -533,29 +532,29 @@ and output:
       end
     end
 
-    def safe_system(cmd, notice = nil, options = { })
+    def safe_system(cmd, notice = nil, options = {})
       say("#{notice}...", false) if notice
 
       total_cmd = if options[:background]
-        "#{cmd} 2>&1 &"
-      else
-        "#{cmd} 2>&1"
-      end
+                    "#{cmd} 2>&1 &"
+                  else
+                    "#{cmd} 2>&1"
+                  end
 
       output = `#{total_cmd}`
-      raise CommandFailedError.new(Dir.pwd, total_cmd, $?, output) unless $?.success?
-      say "OK" if notice
+      raise CommandFailedError.new(Dir.pwd, total_cmd, $CHILD_STATUS, output) unless $CHILD_STATUS.success?
+
+      say 'OK' if notice
 
       output
     end
 
-
     def is_ruby_18
-      !! (RUBY_VERSION =~ /^1\.8\./)
+      !!(RUBY_VERSION =~ /^1\.8\./)
     end
 
     def is_ruby_1
-      !! (RUBY_VERSION =~ /^1\./)
+      !!(RUBY_VERSION =~ /^1\./)
     end
 
     def is_rails_30
