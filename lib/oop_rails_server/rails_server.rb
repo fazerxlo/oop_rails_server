@@ -6,6 +6,7 @@ require 'file/tail'
 require 'oop_rails_server/gemfile'
 require 'bundler'
 require 'socket'
+require 'English'
 
 module OopRailsServer
   class RailsServer
@@ -316,7 +317,9 @@ module OopRailsServer
       end
 
       unless server_pid
-        raise "Unable to start the Rails server even after #{Time.now - start_time} seconds; there seems to be no file at '#{server_pid_file}', or no PID in that file if it does exist. Help!"
+        say "Unable to start the Rails server even after #{Time.now - start_time} seconds; there seems to be no file at '#{server_pid_file}', or no PID in that file if it does exist. Help!"
+        say File.read(server_output_file).strip if File.exist? server_output_file
+        raise "Rails server start failed"
       end
     end
 

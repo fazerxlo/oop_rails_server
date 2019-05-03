@@ -6,7 +6,7 @@ module Spec
       end
 
       def rails_server_default_version
-        ENV['FORTITUDE_SPECS_RAILS_VERSION']
+        ENV['OOP_RAILS_SERVER_SPECS_RAILS_VERSION']
       end
 
       def rails_server_wraps_template_errors?

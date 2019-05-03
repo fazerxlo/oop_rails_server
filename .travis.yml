@@ -1,20 +1,75 @@
 sudo: false
 rvm:
-    - "1.8.7"
     - "1.9.3-p551"
     - "2.0.0-p648"
     - "2.1.10"
-    - "2.2.5"
-    - "2.3.1"
+    - "2.2.10"
+    - "2.3.8"
+    - "2.4.6"
+    - "2.5.5"
+    - "2.6.3"
     - "jruby-1.7.26"
     - "jruby-9.1.5.0"
     - "jruby-9.1.17.0"
     - "jruby-9.2.7.0"
-
+before_install:
+    - gem install -v 1.17.2 bundler --no-rdoc --no-ri
+    - gem install sqlite3 --no-rdoc --no-ri
+    - bundle _1.17.2_ install
 env:
-    - FORTITUDE_SPECS_RAILS_VERSION=5.2.3
-    - FORTITUDE_SPECS_RAILS_VERSION=5.1.7
-    - FORTITUDE_SPECS_RAILS_VERSION=5.0.7.2
-    - FORTITUDE_SPECS_RAILS_VERSION=4.2.7.1
-    - FORTITUDE_SPECS_RAILS_VERSION=4.1.16
-    - FORTITUDE_SPECS_RAILS_VERSION=4.0.13
+    - OOP_RAILS_SERVER_SPECS_RAILS_VERSION=5.2.3
+    - OOP_RAILS_SERVER_SPECS_RAILS_VERSION=5.1.7
+    - OOP_RAILS_SERVER_SPECS_RAILS_VERSION=5.0.7.2
+    - OOP_RAILS_SERVER_SPECS_RAILS_VERSION=4.2.11.1
+    - OOP_RAILS_SERVER_SPECS_RAILS_VERSION=4.1.16
+    - OOP_RAILS_SERVER_SPECS_RAILS_VERSION=4.0.13
+matrix:
+    exclude:
+        # Rails 5.x doesn't support Ruby < 2.2
+        -   rvm: 1.8.7
+            env: OOP_RAILS_SERVER_SPECS_RAILS_VERSION=5.0.7.2
+        -   rvm: "1.9.3-p551"
+            env: OOP_RAILS_SERVER_SPECS_RAILS_VERSION=5.0.7.2
+        -   rvm: "2.0.0-p648"
+            env: OOP_RAILS_SERVER_SPECS_RAILS_VERSION=5.0.7.2
+        -   rvm: "2.1.10"
+            env: OOP_RAILS_SERVER_SPECS_RAILS_VERSION=5.0.7.2
+        -   rvm: "jruby-1.7.26"
+            env: OOP_RAILS_SERVER_SPECS_RAILS_VERSION=5.0.7.2
+        -   rvm: 1.8.7
+            env: OOP_RAILS_SERVER_SPECS_RAILS_VERSION=5.1.7
+        -   rvm: "1.9.3-p551"
+            env: OOP_RAILS_SERVER_SPECS_RAILS_VERSION=5.1.7
+        -   rvm: "2.0.0-p648"
+            env: OOP_RAILS_SERVER_SPECS_RAILS_VERSION=5.1.7
+        -   rvm: "2.1.10"
+            env: OOP_RAILS_SERVER_SPECS_RAILS_VERSION=5.1.7
+        -   rvm: "jruby-1.7.26"
+            env: OOP_RAILS_SERVER_SPECS_RAILS_VERSION=5.1.7
+        -   rvm: 1.8.7
+            env: OOP_RAILS_SERVER_SPECS_RAILS_VERSION=5.2.3
+        -   rvm: "1.9.3-p551"
+            env: OOP_RAILS_SERVER_SPECS_RAILS_VERSION=5.2.3
+        -   rvm: "2.0.0-p648"
+            env: OOP_RAILS_SERVER_SPECS_RAILS_VERSION=5.2.3
+        -   rvm: "2.1.10"
+            env: OOP_RAILS_SERVER_SPECS_RAILS_VERSION=5.2.3
+        -   rvm: "jruby-1.7.26"
+            env: OOP_RAILS_SERVER_SPECS_RAILS_VERSION=5.2.3
+        -   rvm: 1.8.7
+            env: OOP_RAILS_SERVER_SPECS_RAILS_VERSION=5.2.3
+        -   rvm: "1.9.3-p551"
+            env: OOP_RAILS_SERVER_SPECS_RAILS_VERSION=5.2.3
+        -   rvm: "2.0.0-p648"
+            env: OOP_RAILS_SERVER_SPECS_RAILS_VERSION=5.2.3
+        -   rvm: "2.1.10"
+            env: OOP_RAILS_SERVER_SPECS_RAILS_VERSION=5.2.3
+        -   rvm: "jruby-1.7.26"
+            env: OOP_RAILS_SERVER_SPECS_RAILS_VERSION=5.2.3
+        # JRuby 9.1.5.0 doesn't support Rails 5
+        -   rvm: jruby-9.1.5.0
+            env: OOP_RAILS_SERVER_SPECS_RAILS_VERSION=5.0.7.2
+        -   rvm: jruby-9.1.5.0
+            env: OOP_RAILS_SERVER_SPECS_RAILS_VERSION=5.1.7
+        -   rvm: jruby-9.1.5.0
+            env: OOP_RAILS_SERVER_SPECS_RAILS_VERSION=5.2.3
