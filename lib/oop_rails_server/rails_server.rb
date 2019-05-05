@@ -5,7 +5,6 @@ require 'uri'
 require 'file/tail'
 require 'oop_rails_server/gemfile'
 require 'bundler'
-require 'socket'
 require 'English'
 
 module OopRailsServer
@@ -96,7 +95,7 @@ module OopRailsServer
     end
 
     def localhost_name
-      Socket.gethostname || '127.0.0.1'
+      '127.0.0.1'
     end
 
     def send_http_request(path_or_uri, options = {})
@@ -298,7 +297,7 @@ module OopRailsServer
 
     def start_server!
       output = server_output_file
-      cmd = "bundle exec rails server -p #{port} > '#{output}' 2>&1"
+      cmd = "bundle exec rails server -p #{port} -b 127.0.0.1 > '#{output}' 2>&1"
       safe_system(cmd, "starting 'rails server' on port #{port}", background: true)
 
       server_pid_file = File.join(rails_root, 'tmp', 'pids', 'server.pid')
@@ -475,10 +474,10 @@ and output:
     end
 
     def attempt_bundle_install_cmd!(name, use_local)
-      cmd = 'bundle install'
+      cmd = 'bundle _1.17.2_ install'
       cmd << ' --local' if use_local
 
-      description = "running 'bundle install' for #{name.inspect}"
+      description = "running 'bundle _1.17.2_ install' for #{name.inspect}"
       description << ' (with remote fetching allowed)' unless use_local
 
       attempts = 0
@@ -572,6 +571,15 @@ and output:
       rails_version && rails_version =~ /^3\.2\./
     end
 
+    def is_rails_less507
+      rv = if rails_version && rails_version == :default
+             Gem.loaded_specs['activesupport'].version.to_s || :default
+           else
+             rails_version
+      end
+      rv =~ /^4\./ || rv =~ /^5\.0\./
+    end
+
     def backcompat_i18n!(gemfile)
       if is_rails_30
         # Since Rails 3.0.20 was released, a new version of the I18n gem, 0.5.2, was released that moves a constant
@@ -616,6 +624,16 @@ and output:
       end
     end
 
+    def backcompat_sqlite!(gemfile)
+      if is_rails_less507
+        if defined?(RUBY_ENGINE) && RUBY_ENGINE == 'jruby'
+          gemfile.add_version_constraints!('activerecord-jdbcsqlite3-adapter', '1.3.25')
+        else
+          gemfile.add_version_constraints!('sqlite3', '1.3.11')
+        end
+      end
+    end
+
     def backcompat_uglifier!(gemfile)
       # Uglifier 3 is incompatible with Ruby 1.8
       gemfile.add_version_constraints!('uglifier', '< 3.0.0')
@@ -626,6 +644,7 @@ and output:
       backcompat_rake!(gemfile)
       backcompat_rack_cache!(gemfile)
       backcompat_mime_types!(gemfile)
+      backcompat_sqlite!(gemfile)
     end
   end
 end

@@ -13,8 +13,7 @@ rvm:
     - "jruby-9.1.17.0"
     - "jruby-9.2.7.0"
 before_install:
-    - gem install -v 1.17.2 bundler --no-rdoc --no-ri
-    - gem install sqlite3 --no-rdoc --no-ri
+    - gem install -v 1.17.2 bundler
     - bundle _1.17.2_ install
 env:
     - OOP_RAILS_SERVER_SPECS_RAILS_VERSION=5.2.3
